@@ -1,15 +1,15 @@
 'use strict';
 var param = {
         grid : {
-            x : 40,
-            y : 40
+            x : 20,
+            y : 20
         },
         speed : 100,
         cellSize : null
     },
     racket = {
         width : 5,
-        position : 20,
+        position : 10,
         moveLeft : function () {
             if (this.position > 0) {
                 this.position = this.position - 1;
@@ -55,7 +55,7 @@ var param = {
                     self.direction.upward = !self.direction.upward;
                 }
                 self.step();  
-            }, 100);
+            }, 300);
         },
         stopMove : function () {
             clearInterval(this.moveInterval);
@@ -83,8 +83,21 @@ var param = {
                     result.out = true;
                 }
             }
+
+            function checkBricks () {
+                var bricksInfo = bricks.setBall(self.x, self.y);
+
+                if (bricksInfo.h === true) {
+                    result.h = true;
+                }
+                
+                if (bricksInfo.v === true) {
+                    result.v = true;
+                }
+            }
             
             fieldBorders();
+            checkBricks();
             
             return result;
         },
@@ -104,7 +117,48 @@ var param = {
             this.y = param.grid.y - 3;
             this.x = racket.position + Math.floor(racket.width / 2);
         } 
+    },
+    bricks = {
+        content : {},
+        setBall : function (x, y) {
+            var result = {
+                h : false,
+                v : false
+            };
+
+            for (var k in this.content){
+                if (this.content[k].x - x >= -1 && 
+                    this.content[k].x - x <=  1 &&
+                    this.content[k].y - y >= -1 && 
+                    this.content[k].y - y <=  1
+                ){
+                    if (this.content[k].x - x === 1 || this.content[k].x - x === -1){
+                        result.h = true;
+                    }
+
+                    if (this.content[k].y - y === 1 || this.content[k].y - y === -1){
+                        result.v = true;
+                    }
+
+                    this.removeBrick(this.content[k].x, this.content[k].y);
+                }
+            }
+
+            console.log(result);
+
+            return result;
+        },
+        addBrick : function (x, y) {
+            this.content[x + 'x' + y] = {
+                x : x,
+                y : y
+            };
+        },
+        removeBrick : function (x, y) {
+            delete this.content[x + 'x' + y];
+        }
     };
+
 
 var canvas = document.getElementById('view'), 
     context;
@@ -121,6 +175,7 @@ function render () {
     clearCanvas();
     renderRacket();
     renderBall();
+    renderBricks();
     
     function renderRacket () {
         context.beginPath();
@@ -134,6 +189,15 @@ function render () {
         context.rect (ball.x * param.cellSize, ball.y * param.cellSize, param.cellSize, param.cellSize);
         context.fillStyle = 'white';
         context.fill();
+    }
+
+    function renderBricks () {
+        for (var k in bricks.content) {
+            context.beginPath();
+            context.rect (bricks.content[k].x * param.cellSize, bricks.content[k].y * param.cellSize, param.cellSize, param.cellSize);
+            context.fillStyle = 'white';
+            context.fill();
+        }
     }
 
     requestAnimationFrame(render);
